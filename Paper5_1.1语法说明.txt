@@ -1,0 +1,787 @@
+╔══════════════════════════════════════════════════════════════════╗
+║                    Paper5 编程语言 v1.1                          ║
+║              专为 Win32 原生应用设计的编程语言                    ║
+║                    语法参考手册                                  ║
+╚══════════════════════════════════════════════════════════════════╝
+
+========================================================================
+一、语言概述
+========================================================================
+
+Paper5 是一门专为 Windows 原生应用开发设计的编程语言。
+它采用类 XML 的尖括号标签语法定义类型和组件，
+通过简洁的属性和事件系统构建 Win32 GUI 应用程序。
+
+核心设计理念：
+  - 代码量少：用最少的代码创建功能完整的 Windows 应用
+  - 专业级：直接编译为原生 Win32 API 调用，不依赖运行时框架
+  - 易学习：基于标签的声明式语法，降低学习门槛
+  - 高性能：生成纯 C++ 代码，通过 GCC 编译为原生可执行文件
+
+编译流程：
+  源文件(.paper) → 词法分析 → 语法分析 → 代码生成(C++) → GCC → .exe
+
+
+========================================================================
+二、词法约定
+========================================================================
+
+2.1 注释
+  // 单行注释
+  /* 多行注释 */
+
+2.2 标识符
+  由字母、数字、下划线组成，不能以数字开头
+  示例：count, myButton, data_list
+
+2.3 关键字
+  paper, value, int, float, string, bool, color, position, size, rect,
+  arr, code, script, return, if, else, while, for, foreach, break, continue,
+  true, false, null
+
+2.4 分隔符
+  { } ( ) [ ] < > ; , . : =
+
+2.5 运算符
+  =  ==  !=  <  >  <=  >=  +  -  *  /  %  !  &&  ||
+
+2.6 字面量
+  整数：      42, -10, 0
+  浮点数：    3.14, -0.5, 2.0
+  字符串：    "Hello World", 'single quoted'
+  布尔：      true, false
+  颜色：      "#FF0000", "#F0F0F0"
+  坐标：      {100, 200}
+  尺寸：      {800, 600}
+  矩形：      {0, 0, 100, 100}
+  数组：      [1, 2, 3], ["a", "b", "c"]
+
+2.7 转义字符（字符串中）
+  \n  换行
+  \t  制表符
+  \r  回车
+  \\  反斜杠
+  \"  双引号
+  \'  单引号
+
+
+========================================================================
+三、类型系统
+========================================================================
+
+3.1 核心动态类型
+  <value>  万能动态类型，类似 C++ auto
+           自动推断所赋值的类型
+           可以随时改变类型
+           可以持有任何值、组件引用、数组
+
+3.2 显式类型（固定类型，不可改变）
+  <int>       32位有符号整数
+  <float>     双精度浮点数
+  <string>    ANSI 字符串
+  <bool>      布尔值 true / false
+  <color>     颜色值 #RRGGBB
+  <position>  坐标 {x, y}
+  <size>      尺寸 {width, height}
+  <rect>      矩形 {x, y, width, height}
+  <arr>       数组，支持泛型 <arr[int]>、<arr[string]>
+  <code>      函数/代码块
+  <paper>     窗口定义类型
+
+3.3 类型使用示例
+  // 动态类型
+  <value> count = 0;           // 自动推断为整数
+  <value> name = "Paper5";     // 自动推断为字符串
+  <value> flag = true;         // 自动推断为布尔
+  <value> bg = "#F0F0F0";     // 自动推断为颜色
+  <value> pos = {100, 200};   // 自动推断为坐标
+  <value> nums = [1, 2, 3];   // 自动推断为数组
+  <value> ref = myButton;     // 持有组件引用
+
+  // 显式类型
+  <int> age = 25;
+  <float> pi = 3.14159;
+  <string> title = "My App";
+  <bool> visible = true;
+  <color> bgColor = "#FFFFFF";
+  <position> origin = {0, 0};
+  <size> windowSize = {800, 600};
+  <rect> bounds = {10, 10, 200, 100};
+  <arr[int]> scores = [90, 85, 95];
+
+
+========================================================================
+四、变量与作用域
+========================================================================
+
+4.1 变量声明
+  <type> variableName = expression;
+
+  声明时必须初始化。
+  显式类型变量类型不可改变。
+  <value> 类型变量可以重新赋值为不同类型。
+
+4.2 变量作用域
+  - 全局变量：在 <paper> 外部声明，整个程序可见
+  - 局部变量：在 <code> 或事件处理函数内部声明
+  - 组件属性：通过 obj.property 访问
+
+4.3 变量命名规则
+  - 大小写敏感
+  - 不能与关键字重名
+  - 推荐使用驼峰命名法
+
+
+========================================================================
+五、表达式与运算符
+========================================================================
+
+5.1 运算符优先级（从低到高）
+  赋值：       =
+  逻辑或：     ||
+  逻辑与：     &&
+  相等：       ==  !=
+  比较：       <  >  <=  >=
+  加减：       +  -
+  乘除：       *  /  %
+  一元：       !  -  (负号)
+
+5.2 算术运算
+  <value> a = 10 + 5;      // 15
+  <value> b = 10 - 5;      // 5
+  <value> c = 10 * 5;      // 50
+  <value> d = 10 / 3;      // 3 (整数除法)
+  <value> e = 10 % 3;      // 1
+
+5.3 比较运算
+  <value> eq = (a == b);   // 相等
+  <value> ne = (a != b);   // 不等
+  <value> lt = (a < b);    // 小于
+  <value> gt = (a > b);    // 大于
+  <value> le = (a <= b);   // 小于等于
+  <value> ge = (a >= b);   // 大于等于
+
+5.4 逻辑运算
+  <value> and = (a && b);  // 逻辑与
+  <value> or  = (a || b);  // 逻辑或
+  <value> not = !a;        // 逻辑非
+
+5.5 字符串拼接
+  <value> msg = "Hello " + "World";  // "Hello World"
+  <value> mix = "Count: " + 42;      // "Count: 42"
+
+5.6 数组操作
+  <value> arr = [1, 2, 3];
+  <value> first = arr[0];       // 访问元素
+  arr[1] = 10;                  // 修改元素
+
+
+========================================================================
+六、语句
+========================================================================
+
+6.1 表达式语句
+  expression;
+
+6.2 变量声明语句
+  <type> name = expression;
+
+6.3 赋值语句
+  name = expression;
+  object.property = expression;
+
+6.4 条件语句
+  if (condition) {
+      // statements
+  }
+
+  if (condition) {
+      // statements
+  } else {
+      // statements
+  }
+
+  if (condition) {
+      // statements
+  } else if (condition) {
+      // statements
+  } else {
+      // statements
+  }
+
+6.5 循环语句
+  while (condition) {
+      // statements
+  }
+
+  for (init; condition; step) {
+      // statements
+  }
+
+  foreach (item in array) {
+      // statements
+  }
+
+6.6 跳转语句
+  return expression;    // 从函数返回（可选返回值）
+  break;                // 跳出循环
+  continue;             // 继续下一轮循环
+
+6.7 代码块
+  {
+      statement1;
+      statement2;
+  }
+
+
+========================================================================
+七、窗口与组件
+========================================================================
+
+7.1 组件分类总览
+  容器类：    <paper>, <panel>, <group>, <tab>, <splitter>, <scroll>
+  交互类：    <button>, <entry>, <textarea>, <checkbox>, <radio>
+  选择类：    <combobox>, <listbox>, <slider>, <spin>, <datepicker>, <colorpicker>
+  显示类：    <text>, <picture>, <canvas>, <progress>, <status>, <tooltip>, <icon>
+  菜单类：    <menu>, <menuitem>, <submenu>, <separator>, <popupmenu>
+  对话框类：  <messagebox>, <filedialog>, <colordialog>, <fontdialog>, <inputbox>
+  其他类：    <timer>, <task>, <clipboard>, <registry>, <ini>
+
+7.2 窗口定义
+  <paper> WindowName {
+      property = value;
+      property = value;
+
+      <component> compName {
+          property = value;
+      }
+  }
+
+  说明：
+  - <paper> 定义应用的主窗口
+  - WindowName 是窗口的唯一标识符
+  - 组件嵌套在窗口内部定义
+  - 每个组件也有自己的标识符
+
+7.3 通用属性（所有组件）
+  parent      string     父容器名称（可选，默认即为窗口）
+  x           int        水平位置（像素）
+  y           int        垂直位置（像素）
+  width       int        宽度（像素）
+  height      int        高度（像素）
+  text        string     显示文本
+  color       color      前景色 #RRGGBB
+  background  color      背景色 #RRGGBB
+  font        string     字体 "字体名, 大小, 样式"
+  visible     bool       是否可见
+  enabled     bool       是否启用
+  tag         string     自定义标记
+  border      bool       是否显示边框
+  tooltip     string     鼠标悬停提示
+  cursor      string     鼠标指针样式
+  anchor      string     锚定方式 "left|top|right|bottom"
+  dock        string     停靠方式 "fill|top|bottom|left|right"
+  margin      rect       外边距 {left, top, right, bottom}
+  padding     rect       内边距 {left, top, right, bottom}
+
+7.4 窗口专属属性
+  title       string     窗口标题栏文字
+  icon        string     窗口图标文件路径 .ico
+  resizable   bool       是否可调整大小
+  maximize    bool       是否可最大化
+  minimize    bool       是否可最小化
+  topmost     bool       是否始终置顶
+  opacity     int        透明度 0-255
+  style       string     窗口样式 "normal|tool|dialog"
+
+7.5 按钮专属属性
+  default     bool       是否为默认按钮（按回车触发）
+  image       string     按钮图标路径 .bmp
+
+7.6 输入框专属属性
+  placeholder string     占位提示文本
+  password    bool       是否密码输入模式
+  readonly    bool       是否只读
+  maxlength   int        最大输入字符数
+  multiline   bool       是否多行模式
+
+7.7 选择组件专属属性
+  items           arr       选项列表 ["item1", "item2"]
+  selectedIndex   int       当前选中项索引
+  selectedItem    string    当前选中项文本
+  min             int       最小值
+  max             int       最大值
+  value           int       当前值
+  step            int       步长
+
+7.8 进度条专属属性
+  min             int       最小值
+  max             int       最大值
+  value           int       当前值
+  marquee         bool      动画滚动模式
+
+7.9 图片专属属性
+  src             string    图片文件路径 .bmp
+  stretch         bool      是否拉伸填满
+  fit             string    适应方式 "fill|fit|stretch|center"
+
+7.10 菜单项专属属性
+  shortcut        string    快捷键 "Ctrl+O"
+  checked         bool      复选状态
+  image           string    图标路径
+
+7.11 定时器专属属性
+  interval        int       触发间隔（毫秒）
+  repeat          bool      是否重复触发
+
+7.12 窗口示例
+  <paper> MainWindow {
+      width = 800;
+      height = 600;
+      title = "我的应用";
+      background = "#F0F0F0";
+      resizable = true;
+
+      <button> btnHello {
+          x = 20;
+          y = 20;
+          width = 100;
+          height = 30;
+          text = "点击我";
+          background = "#4CAF50";
+          color = "#FFFFFF";
+      }
+
+      <text> labelStatus {
+          x = 20;
+          y = 70;
+          width = 200;
+          text = "就绪";
+          font = "Arial, 12";
+      }
+
+      <entry> inputName {
+          x = 20;
+          y = 100;
+          width = 200;
+          placeholder = "请输入姓名";
+      }
+
+      <listbox> listItems {
+          x = 20;
+          y = 150;
+          width = 200;
+          height = 150;
+          items = ["选项A", "选项B", "选项C"];
+      }
+  }
+
+
+========================================================================
+八、脚本与事件
+========================================================================
+
+8.1 脚本块定义
+  WindowName.script {
+      // 函数定义
+      <code> functionName {
+          // function body
+      }
+
+      // 事件处理
+      componentName.eventName() {
+          // event handler body
+      }
+  }
+
+8.2 函数定义
+  <code> functionName {
+      statement1;
+      statement2;
+      return expression;  // 可选的返回值
+  }
+
+  // 调用函数
+  functionName();
+
+8.3 事件列表
+
+  鼠标事件：
+  onClick(x, y, button)         鼠标点击
+  onDblClick(x, y, button)      鼠标双击
+  onMouseDown(x, y, button)     鼠标按下
+  onMouseUp(x, y, button)       鼠标释放
+  onMouseMove(x, y)             鼠标移动
+  onMouseEnter()                鼠标进入组件
+  onMouseLeave()                鼠标离开组件
+  onMouseWheel(delta)           鼠标滚轮滚动
+
+  键盘事件：
+  onKeyDown(key, shift, ctrl, alt)  键盘按下
+  onKeyUp(key, shift, ctrl, alt)    键盘释放
+  onKeyPress(char)                  字符输入
+
+  值变化事件：
+  onChange(value)                    值改变
+  onSelect(index, item)              选择项改变
+  onCheck(checked)                   勾选状态改变
+  onSlide(value)                     滑块值改变
+
+  窗口事件：
+  onLoad()                           窗口加载完成
+  onClose()                          窗口即将关闭
+  onResize(width, height)            窗口大小改变
+  onMove(x, y)                       窗口位置改变
+  onFocus()                          窗口获得焦点
+  onBlur()                           窗口失去焦点
+  onMinimize()                       窗口最小化
+  onMaximize()                       窗口最大化
+  onRestore()                        窗口恢复
+
+  绘图事件：
+  onPaint(graphics)                  画布重绘（<canvas> 组件）
+  onTimer()                          定时器触发
+
+  其他事件：
+  onDrop(files)                      文件拖放到窗口
+
+8.4 事件处理示例
+  Counter.script {
+      <value> count = 0;
+
+      btnAdd.onClick(x, y, button) {
+          count = count + 1;
+          labelCount.text = count;
+      }
+
+      btnReset.onClick(x, y, button) {
+          count = 0;
+          labelCount.text = "0";
+      }
+
+      canvasArea.onPaint(g) {
+          g.fillRect(0, 0, 800, 600, "#FFFFFF");
+          g.drawText(100, 100, "Hello Paper5", "#000000", "Arial, 24");
+      }
+
+      timerMain.onTimer() {
+          labelTime.text = getTime();
+      }
+  }
+
+
+========================================================================
+九、绘图 API
+========================================================================
+
+  绘图 API 仅在 <canvas> 组件的 onPaint 事件中使用。
+
+9.1 基本图形
+  drawPoint(x, y, size, color)                    绘制点
+  drawLine(x1, y1, x2, y2, width, color)          绘制线段
+  drawRect(x, y, w, h, color)                     绘制矩形边框
+  fillRect(x, y, w, h, color)                     填充矩形
+  drawRoundRect(x, y, w, h, radius, color)        绘制圆角矩形
+  fillRoundRect(x, y, w, h, radius, color)        填充圆角矩形
+  drawCircle(cx, cy, radius, color)               绘制圆形
+  fillCircle(cx, cy, radius, color)               填充圆形
+  drawEllipse(x, y, w, h, color)                  绘制椭圆
+  fillEllipse(x, y, w, h, color)                  填充椭圆
+  drawArc(x, y, w, h, startAngle, sweepAngle, color)  绘制圆弧
+  drawPie(x, y, w, h, startAngle, sweepAngle, color)  绘制扇形
+
+9.2 文字与图片
+  drawText(x, y, text, color, font)               绘制文字
+  drawImage(x, y, w, h, src)                      绘制图片
+  measureText(text, font)                         测量文字尺寸
+
+9.3 高级图形
+  drawPolygon(points, color)                      绘制多边形
+  fillPolygon(points, color)                      填充多边形
+
+9.4 画布操作
+  clear(color)                                    清除画布为指定颜色
+
+9.5 绘图示例
+  canvas.onPaint(g) {
+      g.clear("#FFFFFF");
+      g.fillRect(50, 50, 200, 100, "#FF0000");
+      g.drawLine(50, 50, 250, 150, 2, "#000000");
+      g.drawText(100, 200, "Hello!", "#000000", "Arial, 16");
+  }
+
+
+========================================================================
+十、系统 API
+========================================================================
+
+10.1 输出与调试
+  print(value)                 控制台输出
+  alert(message)               弹出消息框（确定按钮）
+  confirm(message)             确认对话框，返回 true/false
+  prompt(message, default)     输入对话框，返回输入的字符串或 null
+
+10.2 程序控制
+  sleep(ms)                    暂停指定毫秒数
+  exit(code)                   退出程序（code: 0 正常退出）
+  run(path)                    运行外部可执行文件
+  shell(path, params)          用关联程序打开文件或网址
+
+10.3 系统信息
+  getEnv(name)                 获取环境变量值
+  setEnv(name, value)          设置环境变量
+  getTick()                    获取系统启动后的毫秒数
+  getDate()                    获取当前日期 "YYYY-MM-DD"
+  getTime()                    获取当前时间 "HH:MM:SS"
+
+10.4 数学
+  random(min, max)             生成 [min, max] 范围内的随机整数
+
+10.5 文件操作
+  readFile(path)               读取文件全部内容为字符串
+  writeFile(path, content)     写入字符串到文件
+  fileExists(path)             检查文件是否存在
+  deleteFile(path)             删除文件
+
+10.6 剪贴板
+  getClipboard()               获取剪贴板文本内容
+  setClipboard(text)           设置剪贴板文本内容
+
+10.7 音频
+  playSound(path)              播放 WAV 声音文件（异步）
+  beep(freq, duration)         播放系统蜂鸣声（频率Hz, 持续时间ms）
+
+
+========================================================================
+十一、预定义常量
+========================================================================
+
+11.1 颜色常量
+  BLACK        #000000
+  WHITE        #FFFFFF
+  RED          #FF0000
+  GREEN        #00FF00
+  BLUE         #0000FF
+  YELLOW       #FFFF00
+  CYAN         #00FFFF
+  MAGENTA      #FF00FF
+  GRAY         #808080
+  SILVER       #C0C0C0
+  MAROON       #800000
+  NAVY         #000080
+  TEAL         #008080
+  OLIVE        #808000
+  TRANSPARENT  透明色
+
+11.2 字体常量
+  FONT_DEFAULT    "Arial, 12"
+  FONT_SMALL      "Arial, 10"
+  FONT_LARGE      "Arial, 16"
+  FONT_TITLE      "Arial, 24, bold"
+  FONT_MONO       "Consolas, 12"
+
+11.3 消息框常量（用于 alert/confirm 的参数）
+  MB_OK           确定按钮
+  MB_OKCANCEL     确定/取消
+  MB_YESNO        是/否
+  MB_INFO         信息图标
+  MB_WARNING      警告图标
+  MB_ERROR        错误图标
+
+11.4 光标常量
+  CURSOR_ARROW    标准箭头
+  CURSOR_HAND     手型指针
+  CURSOR_IBEAM    文本输入光标
+  CURSOR_WAIT     等待光标
+  CURSOR_CROSS    十字准星光标
+
+
+========================================================================
+十二、完整示例
+========================================================================
+
+12.1 计数器应用
+  <value> count = 0;
+
+  <paper> Counter {
+      width = 400;
+      height = 300;
+      title = "计数器";
+
+      <text> display {
+          x = 180;
+          y = 130;
+          width = 40;
+          text = "0";
+          font = "Arial, 24";
+      }
+
+      <button> btnAdd {
+          x = 150;
+          y = 200;
+          width = 80;
+          height = 30;
+          text = "+1";
+          background = "#4CAF50";
+          color = "#FFFFFF";
+      }
+  }
+
+  Counter.script {
+      btnAdd.onClick(x, y, button) {
+          count = count + 1;
+          display.text = count;
+      }
+  }
+
+12.2 绘图应用
+  <paper> SketchPad {
+      width = 800;
+      height = 600;
+      title = "绘图工具";
+
+      <button> btnClear {
+          x = 10;
+          y = 10;
+          width = 80;
+          height = 30;
+          text = "清除";
+      }
+
+      <canvas> canvas {
+          x = 0;
+          y = 50;
+          width = 800;
+          height = 550;
+          background = "#FFFFFF";
+      }
+  }
+
+  SketchPad.script {
+      <value> drawing = false;
+
+      btnClear.onClick(x, y, button) {
+          canvas.clear("#FFFFFF");
+      }
+
+      canvas.onMouseDown(x, y, button) {
+          drawing = true;
+      }
+
+      canvas.onMouseMove(x, y) {
+          if (drawing) {
+              canvas.drawPoint(x, y, 5, "#000000");
+          }
+      }
+
+      canvas.onMouseUp(x, y, button) {
+          drawing = false;
+      }
+  }
+
+12.3 记事本应用
+  <paper> Notepad {
+      width = 600;
+      height = 400;
+      title = "记事本";
+
+      <menu> mainMenu {
+          <menuitem> menuFile {
+              text = "文件";
+              shortcut = "Alt+F";
+
+              <menuitem> menuOpen {
+                  text = "打开";
+                  shortcut = "Ctrl+O";
+              }
+              <menuitem> menuSave {
+                  text = "保存";
+                  shortcut = "Ctrl+S";
+              }
+              <separator> sep1;
+              <menuitem> menuExit {
+                  text = "退出";
+                  shortcut = "Alt+F4";
+              }
+          }
+      }
+
+      <textarea> editor {
+          x = 0;
+          y = 0;
+          width = 600;
+          height = 400;
+          font = "Consolas, 12";
+          dock = "fill";
+      }
+  }
+
+  Notepad.script {
+      menuOpen.onClick() {
+          <value> path = prompt("打开文件", "");
+          if (path) {
+              <value> content = readFile(path);
+              editor.text = content;
+          }
+      }
+
+      menuSave.onClick() {
+          <value> path = prompt("保存文件", "");
+          if (path) {
+              writeFile(path, editor.text);
+              alert("保存成功！");
+          }
+      }
+
+      menuExit.onClick() {
+          exit(0);
+      }
+  }
+
+
+========================================================================
+十三、附录
+========================================================================
+
+13.1 技术指标
+  编译器：       C++ 实现，生成 ANSI/UTF-8 字符集代码
+  目标平台：     Windows (Win32 API)
+  编译工具链：   GCC / MinGW
+  生成产物：     原生 .exe 可执行文件（最小约 50KB）
+  语言范式：     声明式 + 事件驱动
+
+13.2 IDE 快捷键
+  Ctrl+N          新建文件
+  Ctrl+O          打开文件
+  Ctrl+S          保存文件
+  F7              编译
+  F5              运行
+  Ctrl+F5         编译并运行
+  Ctrl+F          查找
+  Ctrl+H          替换
+  Ctrl+Z          撤销
+  Ctrl+Y          重做
+
+13.3 编译命令
+  paper5c input.paper                 编译为可执行文件
+  paper5c input.paper -o output.exe   指定输出文件
+  paper5c input.paper --dump-tokens   输出词法分析结果
+  paper5c input.paper --dump-ast      输出语法树结构
+  paper5c input.paper --gen-only      仅生成 C++ 代码
+  paper5c input.paper --keep-temp     保留中间 C++ 文件
+  paper5c input.paper --run           编译后立即运行
+
+13.4 版本历史
+  v1.0  - 初始版本，基础编译器和 IDE
+  v1.1  - 完善类型系统，增加 <value> 动态类型
+        - 扩展 UI 组件库
+        - 完善事件系统
+        - 增加绘图 API
+        - 增加系统 API
+        - 增加预定义常量
+
+
+╔══════════════════════════════════════════════════════════════════╗
+║              Paper5 v1.1 语法参考手册 - 结束                     ║
+║          专为 Win32 原生应用设计 | 简洁 · 高效 · 专业           ║
+╚══════════════════════════════════════════════════════════════════╝
